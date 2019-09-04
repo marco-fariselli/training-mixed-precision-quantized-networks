@@ -442,6 +442,7 @@ def memory_driven_quant(model, x, ONLY_READ_MEM = 512*1024, 	READWRITE_MEM = 64*
 	param_list = []
 	model.eval()
 
+#this for create a vector where stores the number of activations in every layer and sets the default number of bits for every act and weights
 	for i,module in enumerate(model.modules()):
 		if type(module) in [ Conv2d_SAME, nn.Conv2d]:
 			print('Conv2d (Same) =: ',i)

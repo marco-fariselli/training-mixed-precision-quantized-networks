@@ -892,7 +892,7 @@ class QuantOp():
                         Z_w = -weight_quant_tensor.min().item()
 
                         M0, n_exp = self._get_m0_nexp((S_a_i*S_w)/S_a_o ) 
-                        M0 = np.clip(np.round(M0*2**(M0_BITS-1)),-2**(M0_BITS-1),2**(M0_BITS-1)-1) / 2**(M0_BITS-1)
+                        M0 = np.clip(np.round(M0.item()*2**(M0_BITS-1)),-2**(M0_BITS-1),2**(M0_BITS-1)-1) / 2**(M0_BITS-1)
                         n_exp = np.clip(n_exp,-2**(N0_BITS-1),2**(N0_BITS-1)-1  )
 
                         layer['quant_act'].M_ZERO = M0.tolist()

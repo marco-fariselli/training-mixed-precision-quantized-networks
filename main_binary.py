@@ -106,7 +106,7 @@ def main():
     best_prec1 = 0
     args = parser.parse_args()
     
-    weight_bits = int(args.weight_bits)
+    weight_bits = int(args.weight_bits) #take the integer part of the given number of bits 
     activ_bits = int(args.activ_bits)
 
 
@@ -137,19 +137,23 @@ def main():
     nClasses = get_num_classes(args.dataset)
     model_config = {'input_size': args.input_size, 'dataset': args.dataset, 'num_classes': nClasses, \
                     'type_quant': args.type_quant, 'weight_bits': weight_bits, 'activ_bits': activ_bits,\
-                    'activ_type': args.activ_type, 'width_mult': float(args.mobilenet_width), 'input_dim': float(args.mobilenet_input) }
+                    'activ_type': args.activ_type, 'width_mult': float(args.mobilenet_width), 'input_dim': float(args.mobilenet_input) }    #model_config is a dictionary in python which associate each keyword with a number
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))
 
     model = model(**model_config)
     logging.info("created model with configuration: %s", model_config)
+
+    #print the entire network default structure
     print(model)
 
+    #after the model creation we count the number of parameters
     num_parameters = sum([l.nelement() for l in model.parameters()])
     logging.info("number of parameters: %d", num_parameters)
 
     # Data loading code
+    #different trasformations if we are training or evaluating
     default_transform = {
         'train': get_transform(args.dataset,
                                input_size=args.input_size, augment=True),
@@ -195,17 +199,18 @@ def main():
             params += [{'params':value,'weight_decay': 1e-4}]
         else:
             params += [{'params':value}]
-    optimizer = torch.optim.SGD(params, lr=0.1)
+    optimizer = torch.optim.SGD(params, lr=0.1) #default optimizer = SGD
     logging.info('training regime: %s', regime)
 
     #define quantizer 
-    if args.quantizer:
+    if args.quantizer:  #args.quantizer = True/False if i want to quantize or not
         if args.mem_constraint is not '':
-            mem_contraints = json.loads(args.mem_constraint)
+            mem_contraints = json.loads(args.mem_constraint)    #json.loads() convert a JSON string into a python dictionary
             print('This is the memory constraint:', mem_contraints )
             if mem_contraints is not None:
                 x_test = torch.Tensor(1,3,args.mobilenet_input,args.mobilenet_input)
                 add_config = memory_driven_quant(model, x_test, mem_contraints[0], mem_contraints[1], args.mixed_prec_quant)
+                print(add_config)
                 if add_config == -1:
                     print('The quantization process failed!')
             else:
@@ -218,6 +223,7 @@ def main():
             else:
                 add_config = []
 
+#quantizer è ora un oggetto QuantOp. devi scrivere quantization.QuantOp(...) perchè è nella cartella quantization
         quantizer = quantization.QuantOp(model, args.type_quant, weight_bits, \
             batch_fold_type=args.batch_fold_type, batch_fold_delay=args.batch_fold_delay, act_bits=activ_bits, \
             add_config = add_config )
@@ -227,7 +233,7 @@ def main():
     else:
         quantizer = None
 
-    #exit(0)
+    exit(0)
 
 
     #multi gpus

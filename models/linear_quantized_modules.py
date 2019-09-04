@@ -251,7 +251,32 @@ class ScaledClippedLinearQuantizationChannel(nn.Module):
         inplace_str = ', inplace' if self.inplace else ''
         return '{0}(clip_val={1}{2})'.format(self.__class__.__name__, self.clip_val, inplace_str)
 
+class ScaledClippedLinearQuantizationChannelBias(nn.Module):
+    def __init__(self, n_channels, clip_val=1, M=1, inplace=True, bias=True):
+        super(ScaledClippedLinearQuantizationChannelBias, self).__init__()
+        self.clip_val = clip_val
+        self.M_ZERO = torch.Tensor(n_channels).fill_(M)
+        self.N_ZERO = torch.Tensor(n_channels).fill_(M)
+        self.BIAS = torch.Tensor(n_channels).fill_(M)
+        self.inplace = inplace
+        self.bias = bias
 
+    def forward(self, input):
+#        input = input.mul(self.M_ZERO).mul(2**self.N_ZERO).round()
+        if self.bias is True:
+            input = input.mul(self.M_ZERO.unsqueeze(0).unsqueeze(2).unsqueeze(2).expand(input.size()))
+            input = input.mul(self.N_ZERO.unsqueeze(0).unsqueeze(2).unsqueeze(2).expand(input.size()))
+            input = input.add(self.BIAS.unsqueeze(0).unsqueeze(2).unsqueeze(2).expand(input.size()))
+            input = input.floor() #round
+            input = clamp(input, 0, self.clip_val, self.inplace)
+        else:
+            input = input.mul(self.M_ZERO).mul(self.N_ZERO)
+            
+        return input
+
+    def __repr__(self):
+        inplace_str = ', inplace' if self.inplace else ''
+        return '{0}(clip_val={1}{2})'.format(self.__class__.__name__, self.clip_val, inplace_str)
 
 # Tensorflow convolution with SAME padding
 class _ConvNd(Module):
